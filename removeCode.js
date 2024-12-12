@@ -1,22 +1,16 @@
-// api/removeCode.js
+// /api/removeCode.js
+let codes = [];
+
 module.exports = async (req, res) => {
-    if (req.method === 'POST') {
-        try {
-            const { id, removePassword } = req.body;
-            let codes = JSON.parse(process.env.CODES || '[]');
-            const codeIndex = codes.findIndex(code => code.id === id && code.removePassword === removePassword);
-
-            if (codeIndex === -1) {
-                return res.status(400).json({ message: 'Invalid password or code not found' });
-            }
-
-            codes.splice(codeIndex, 1);
-            process.env.CODES = JSON.stringify(codes);
-            res.status(200).json({ message: 'Code removed successfully' });
-        } catch (error) {
-            res.status(500).json({ message: 'Error removing code', error: error.message });
-        }
-    } else {
-        res.status(405).json({ message: 'Method Not Allowed' });
+  if (req.method === 'POST') {
+    const { id, password } = req.body;
+    const index = codes.findIndex(code => code.id === id && code.removePassword === password);
+    if (index !== -1) {
+      codes.splice(index, 1);
+      return res.json({ success: true });
     }
+    return res.json({ success: false, message: 'Incorrect password or code not found' });
+  }
+  return res.status(405).json({ success: false, message: 'Method not allowed' });
 };
+
