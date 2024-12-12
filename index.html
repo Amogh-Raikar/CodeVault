@@ -1,38 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" >
-<head>
-  <meta charset="UTF-8">
-  <title>CodeVault</title>
-  
-
-</head>
-<body>
-<!-- partial:index.partial.html -->
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeVault - Permanent Code Sharing</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <title>CodeVault - Upload Your Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f4f4f4;
-        }
-        .code-card {
-            transition: transform 0.3s ease;
-        }
-        .code-card:hover {
-            transform: scale(1.02);
-        }
-        #removeModal {
-            display: none;
-        }
-        .code-details {
-            display: none;
-        }
-        .code-details.active {
-            display: block;
         }
     </style>
 </head>
@@ -85,93 +60,9 @@
         </div>
     </div>
 
-    <!-- Remove Modal -->
-    <div id="removeModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-        <div class="bg-white p-6 rounded-lg w-96">
-            <h2 class="text-2xl font-bold mb-4 text-center">Remove Code Snippet</h2>
-            <div class="mb-4">
-                <label for="removeModalPassword" class="block text-gray-700 mb-2">Enter Removal Password:</label>
-                <input type="password" id="removeModalPassword" class="w-full p-2 border rounded" placeholder="Removal password">
-            </div>
-            <div class="flex space-x-4 justify-center">
-                <button id="confirmRemove" class="bg-red-500 text-white py-2 px-4 rounded">Remove</button>
-                <button id="cancelRemove" class="bg-gray-300 text-black py-2 px-4 rounded">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Local Storage Management
-        class CodeStorage {
-            static getCodes() {
-                return JSON.parse(localStorage.getItem('codesnippets') || '[]');
-            }
-
-            static saveCodes(codes) {
-                localStorage.setItem('codesnippets', JSON.stringify(codes));
-            }
-
-            static addCode(code) {
-                const codes = this.getCodes();
-                code.id = Date.now().toString();
-                codes.push(code);
-                this.saveCodes(codes);
-                return code.id;
-            }
-
-            static removeCode(id, password) {
-                let codes = this.getCodes();
-                const index = codes.findIndex(c => c.id === id && c.removePassword === password);
-                if (index !== -1) {
-                    codes.splice(index, 1);
-                    this.saveCodes(codes);
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        // UI Management
-        function renderCodeList() {
-            const codeList = document.getElementById('codeList');
-            codeList.innerHTML = '';
-            const codes = CodeStorage.getCodes();
-
-            if (codes.length === 0) {
-                codeList.innerHTML = '<p class="text-center text-gray-500">No code snippets uploaded yet.</p>';
-                return;
-            }
-
-            codes.forEach(code => {
-                const codeCard = document.createElement('div');
-                codeCard.className = 'code-card bg-white p-4 rounded shadow hover:shadow-lg transition';
-                codeCard.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <h3 class="text-lg font-bold">${code.name}</h3>
-                        <span class="text-sm text-gray-500">${code.language}</span>
-                    </div>
-                    ${code.uploaderName ? `<div class="text-sm text-gray-600 mb-2">Uploaded by: ${code.uploaderName}</div>` : ''}
-                    <button onclick="showCodeDetails('${code.id}')" class="mt-2 w-full bg-blue-500 text-white py-1 rounded">View Code</button>
-                    <div id="codeDetails-${code.id}" class="code-details">
-                        <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-48"><code>${code.content}</code></pre>
-                        <button onclick="showRemoveModal('${code.id}')" class="mt-2 w-full bg-red-500 text-white py-1 rounded">Remove Snippet</button>
-                    </div>
-                `;
-                codeList.appendChild(codeCard);
-            });
-        }
-
-        function showCodeDetails(id) {
-            const allDetails = document.querySelectorAll('.code-details');
-            allDetails.forEach(detail => {
-                detail.classList.remove('active');
-            });
-            const codeDetails = document.getElementById(`codeDetails-${id}`);
-            codeDetails.classList.add('active');
-        }
-
-        // Event Listener for Upload Button
-        document.getElementById('uploadButton').addEventListener('click', () => {
+        // Handle the code upload
+        document.getElementById('uploadButton').addEventListener('click', async () => {
             const language = document.getElementById('language').value;
             const name = document.getElementById('codeName').value;
             const content = document.getElementById('codeContent').value;
@@ -191,53 +82,41 @@
                 uploaderName: uploaderName || null
             };
 
-            CodeStorage.addCode(code);
-            renderCodeList();
+            // Send data to backend API
+            const response = await fetch('https://your-backend-name.vercel.app/api/upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(code)
+            });
 
-            // Clear input fields after upload
-            document.getElementById('codeName').value = '';
-            document.getElementById('codeContent').value = '';
-            document.getElementById('removePassword').value = '';
-            document.getElementById('uploaderName').value = '';
+            const result = await response.json();
+            console.log(result); // Log the response (e.g., success message)
+
+            // Optionally, update the UI to show the uploaded code snippet
+            renderCodeList();
         });
 
-        // Remove Modal Logic
-        function showRemoveModal(id) {
-            const removeModal = document.getElementById('removeModal');
-            removeModal.style.display = 'flex';
+        // Fetch code snippets from backend
+        async function renderCodeList() {
+            const codeList = document.getElementById('codeList');
+            codeList.innerHTML = '';
+            const response = await fetch('https://your-backend-name.vercel.app/api/getCode');
+            const codes = await response.json();
 
-            document.getElementById('confirmRemove').onclick = () => {
-                const password = document.getElementById('removeModalPassword').value;
-                const success = CodeStorage.removeCode(id, password);
-                
-                if (success) {
-                    renderCodeList();  // Re-render the list after removal
-                    removeModal.style.display = 'none';
-                    document.getElementById('removeModalPassword').value = '';
-                } else {
-                    alert('Incorrect removal password');
-                }
-            };
-
-            document.getElementById('cancelRemove').onclick = () => {
-                removeModal.style.display = 'none';
-                document.getElementById('removeModalPassword').value = '';
-            };
+            codes.forEach(code => {
+                const codeCard = document.createElement('div');
+                codeCard.className = 'bg-white p-4 rounded shadow hover:shadow-lg transition';
+                codeCard.innerHTML = `
+                    <h3 class="text-lg font-bold">${code.name}</h3>
+                    <span class="text-sm text-gray-500">${code.language}</span>
+                    <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-48"><code>${code.content}</code></pre>
+                `;
+                codeList.appendChild(codeCard);
+            });
         }
 
-        // Close modal when clicking outside
-        document.getElementById('removeModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                e.currentTarget.style.display = 'none';
-            }
-        });
-
-        // Initialize the code list rendering on page load
+        // Initialize by rendering code list
         renderCodeList();
     </script>
-</body>
-</html>
-<!-- partial -->
-  
 </body>
 </html>
