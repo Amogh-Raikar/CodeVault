@@ -4,17 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeVault - Upload Your Code</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f4f4;
-        }
-    </style>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold text-center mb-8 text-blue-600">CodeVault</h1>
         
+        <!-- Form to upload code -->
         <div class="bg-white shadow-lg rounded-lg p-6">
             <div class="mb-4">
                 <label for="language" class="block text-gray-700 font-bold mb-2">Select Language:</label>
@@ -29,39 +25,40 @@
                     <option value="other">Other</option>
                 </select>
             </div>
-            
+
             <div class="mb-4">
                 <label for="uploaderName" class="block text-gray-700 font-bold mb-2">Uploader Name (Optional):</label>
                 <input type="text" id="uploaderName" class="w-full p-2 border rounded" placeholder="Your name or nickname">
             </div>
-            
+
             <div class="mb-4">
                 <label for="codeName" class="block text-gray-700 font-bold mb-2">Code Title:</label>
                 <input type="text" id="codeName" class="w-full p-2 border rounded" placeholder="Give your code a descriptive name">
             </div>
-            
+
             <div class="mb-4">
                 <label for="codeContent" class="block text-gray-700 font-bold mb-2">Your Code:</label>
                 <textarea id="codeContent" rows="10" class="w-full p-2 border rounded" placeholder="Paste your code here..."></textarea>
             </div>
-            
+
             <div class="mb-4">
                 <label for="removePassword" class="block text-gray-700 font-bold mb-2">Optional Remove Password:</label>
                 <input type="password" id="removePassword" class="w-full p-2 border rounded" placeholder="Set a password to remove this code later">
             </div>
-            
+
             <button id="uploadButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-300">
                 Upload Code
             </button>
         </div>
         
+        <!-- Display the uploaded code snippets -->
         <div id="codeList" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Dynamically populated code snippets will appear here -->
         </div>
     </div>
 
     <script>
-        // Handle the code upload
+        // Upload Code snippet to the backend API (Vercel)
         document.getElementById('uploadButton').addEventListener('click', async () => {
             const language = document.getElementById('language').value;
             const name = document.getElementById('codeName').value;
@@ -82,40 +79,74 @@
                 uploaderName: uploaderName || null
             };
 
-            // Send data to backend API
-            const response = await fetch('https://your-backend-name.vercel.app/api/upload', {
+            // Send the uploaded code to the serverless function
+            const response = await fetch('/api/upload', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(code)
             });
 
             const result = await response.json();
-            console.log(result); // Log the response (e.g., success message)
+            if (result.success) {
+                alert('Code uploaded successfully!');
+                renderCodeList(); // Refresh the list of codes
+            } else {
+                alert('Failed to upload code.');
+            }
 
-            // Optionally, update the UI to show the uploaded code snippet
-            renderCodeList();
+            // Clear the form
+            document.getElementById('codeName').value = '';
+            document.getElementById('codeContent').value = '';
+            document.getElementById('removePassword').value = '';
+            document.getElementById('uploaderName').value = '';
         });
 
-        // Fetch code snippets from backend
+        // Fetch and render all uploaded code snippets
         async function renderCodeList() {
-            const codeList = document.getElementById('codeList');
-            codeList.innerHTML = '';
-            const response = await fetch('https://your-backend-name.vercel.app/api/getCode');
-            const codes = await response.json();
+            const response = await fetch('/api/getCode');
+            const data = await response.json();
 
-            codes.forEach(code => {
+            const codeList = document.getElementById('codeList');
+            codeList.innerHTML = ''; // Clear the list before rendering new content
+
+            data.codes.forEach(code => {
                 const codeCard = document.createElement('div');
                 codeCard.className = 'bg-white p-4 rounded shadow hover:shadow-lg transition';
                 codeCard.innerHTML = `
-                    <h3 class="text-lg font-bold">${code.name}</h3>
-                    <span class="text-sm text-gray-500">${code.language}</span>
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-lg font-bold">${code.name}</h3>
+                        <span class="text-sm text-gray-500">${code.language}</span>
+                    </div>
+                    ${code.uploaderName ? `<div class="text-sm text-gray-600 mb-2">Uploaded by: ${code.uploaderName}</div>` : ''}
                     <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-48"><code>${code.content}</code></pre>
+                    <button onclick="showRemoveModal('${code.id}')" class="mt-2 w-full bg-red-500 text-white py-1 rounded">Remove Snippet</button>
                 `;
                 codeList.appendChild(codeCard);
             });
         }
 
-        // Initialize by rendering code list
+        // Show the modal for removing a code snippet
+        function showRemoveModal(id) {
+            const password = prompt('Enter removal password:');
+            if (password) {
+                fetch('/api/removeCode', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, password })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Code removed successfully!');
+                        renderCodeList(); // Refresh the list after removal
+                    } else {
+                        alert('Incorrect password or code not found.');
+                    }
+                });
+            }
+        }
+
+        // Initial load of code snippets
         renderCodeList();
     </script>
 </body>
