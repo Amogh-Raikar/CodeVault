@@ -3,120 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeVault</title>
+    <title>CodeVault - Permanent Code Sharing</title>
+    <script>
+        const API_BASE = '/api'; // Base URL for API
+    </script>
+    <script defer src="script.js"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold text-center mb-8 text-blue-600">CodeVault</h1>
 
-        <!-- Upload Code Form -->
-        <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
+        <!-- Upload Form -->
+        <div class="bg-white shadow-lg rounded-lg p-6">
             <div class="mb-4">
-                <label for="language" class="block text-gray-700 font-bold mb-2">Language:</label>
+                <label for="language" class="block text-gray-700 font-bold mb-2">Select Language:</label>
                 <select id="language" class="w-full p-2 border rounded">
-                    <option value="C">C</option>
-                    <option value="C++">C++</option>
-                    <option value="Java">Java</option>
-                    <option value="Python">Python</option>
-                    <option value="JavaScript">JavaScript</option>
-                    <option value="HTML">HTML</option>
-                    <option value="CSS">CSS</option>
-                    <option value="Other">Other</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="python">Python</option>
+                    <option value="cpp">C++</option>
+                    <option value="java">Java</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="c">C</option>
+                    <option value="other">Other</option>
                 </select>
             </div>
 
             <div class="mb-4">
                 <label for="uploaderName" class="block text-gray-700 font-bold mb-2">Uploader Name (Optional):</label>
-                <input type="text" id="uploaderName" class="w-full p-2 border rounded" placeholder="Your name or nickname">
+                <input type="text" id="uploaderName" class="w-full p-2 border rounded" placeholder="Your name">
             </div>
 
             <div class="mb-4">
                 <label for="codeName" class="block text-gray-700 font-bold mb-2">Code Title:</label>
-                <input type="text" id="codeName" class="w-full p-2 border rounded" placeholder="Give your code a title">
+                <input type="text" id="codeName" class="w-full p-2 border rounded" placeholder="Code title">
             </div>
 
             <div class="mb-4">
-                <label for="codeContent" class="block text-gray-700 font-bold mb-2">Code:</label>
-                <textarea id="codeContent" rows="6" class="w-full p-2 border rounded" placeholder="Paste your code here..."></textarea>
+                <label for="codeContent" class="block text-gray-700 font-bold mb-2">Your Code:</label>
+                <textarea id="codeContent" rows="10" class="w-full p-2 border rounded" placeholder="Paste your code here..."></textarea>
             </div>
 
-            <button id="uploadButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
-                Upload Code
-            </button>
+            <div class="mb-4">
+                <label for="removePassword" class="block text-gray-700 font-bold mb-2">Removal Password:</label>
+                <input type="password" id="removePassword" class="w-full p-2 border rounded" placeholder="Set a password">
+            </div>
+
+            <button id="uploadButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Upload Code</button>
         </div>
 
-        <!-- Code List -->
-        <div id="codeList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Code snippets will be displayed here -->
-        </div>
+        <!-- Display Snippets -->
+        <div id="codeList" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
     <script>
-        const API_BASE = '/api'; // Base URL for API endpoints
+        const API_BASE = '/api'; // Base API path
 
-        // Function to fetch and render uploaded code snippets
         async function fetchAndRenderCode() {
             const response = await fetch(`${API_BASE}/getCode`);
             const data = await response.json();
-
             const codeList = document.getElementById('codeList');
-            codeList.innerHTML = ''; // Clear existing content
-
-            if (data.codes.length === 0) {
-                codeList.innerHTML = '<p class="text-center text-gray-500">No code snippets uploaded yet.</p>';
-                return;
-            }
+            codeList.innerHTML = '';
 
             data.codes.forEach((code) => {
                 const codeCard = document.createElement('div');
                 codeCard.className = 'bg-white p-4 rounded shadow';
                 codeCard.innerHTML = `
-                    <div class="mb-2">
-                        <h3 class="text-lg font-bold">${code.name}</h3>
-                        <p class="text-sm text-gray-500">${code.language}</p>
-                    </div>
-                    <pre class="bg-gray-100 p-2 rounded overflow-auto text-sm">${code.content}</pre>
-                    <p class="text-xs text-gray-400 mt-2">Uploaded by: ${code.uploaderName || 'Anonymous'}</p>
+                    <h3 class="text-lg font-bold">${code.name}</h3>
+                    <p>${code.language}</p>
+                    <pre>${code.content}</pre>
+                    <button onclick="removeCode('${code.id}')" class="bg-red-500 text-white">Remove</button>
                 `;
                 codeList.appendChild(codeCard);
             });
         }
-
-        // Function to upload a new code snippet
-        async function uploadCode() {
-            const language = document.getElementById('language').value;
-            const name = document.getElementById('codeName').value;
-            const content = document.getElementById('codeContent').value;
-            const uploaderName = document.getElementById('uploaderName').value;
-
-            if (!name || !content) {
-                alert('Please provide a title and code content!');
-                return;
-            }
-
-            const payload = { language, name, content, uploaderName };
-
-            const response = await fetch(`${API_BASE}/upload`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                alert('Code uploaded successfully!');
-                fetchAndRenderCode(); // Refresh the code list
-            } else {
-                alert('Failed to upload code!');
-            }
-        }
-
-        // Event listener for the upload button
-        document.getElementById('uploadButton').addEventListener('click', uploadCode);
-
-        // Fetch and display code snippets on page load
-        fetchAndRenderCode();
     </script>
 </body>
 </html>
