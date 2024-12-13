@@ -1,9 +1,10 @@
-// /api/getCode.js
-let codes = [];  // You can also use a database for persistent storage
+// File: api/getCode.js
+import { codes } from './upload'; // Share the in-memory `codes` array
 
-module.exports = async (req, res) => {
-  if (req.method === 'GET') {
-    return res.json({ codes });
-  }
-  return res.status(405).json({ success: false, message: 'Method not allowed' });
-};
+export default async function handler(req, res) {
+    if (req.method === 'GET') {
+        return res.status(200).json({ success: true, codes });
+    }
+
+    res.status(405).json({ success: false, message: 'Method not allowed' });
+}
