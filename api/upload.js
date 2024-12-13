@@ -1,19 +1,25 @@
-// /api/upload.js
-let codes = [];
+// File: api/upload.js
+const codes = []; // In-memory database (resets every time the server restarts)
 
-module.exports = async (req, res) => {
-  if (req.method === 'POST') {
-    const { language, name, content, removePassword, uploaderName } = req.body;
-    const newCode = {
-      id: Date.now().toString(),
-      language,
-      name,
-      content,
-      removePassword: removePassword || null,
-      uploaderName: uploaderName || null
-    };
-    codes.push(newCode);
-    return res.json({ success: true, code: newCode });
-  }
-  return res.status(405).json({ success: false, message: 'Method not allowed' });
-};
+export default async function handler(req, res) {
+    if (req.method === 'POST') {
+        const { language, name, content, uploaderName } = req.body;
+
+        if (!name || !content) {
+            return res.status(400).json({ success: false, message: 'Name and content are required!' });
+        }
+
+        const codeSnippet = {
+            id: codes.length + 1,
+            language,
+            name,
+            content,
+            uploaderName,
+        };
+
+        codes.push(codeSnippet);
+        return res.status(201).json({ success: true, code: codeSnippet });
+    }
+
+    res.status(405).json({ success: false, message: 'Method not allowed' });
+}
