@@ -58,8 +58,8 @@
     </div>
 
     <script>
-        // Upload Code snippet to the backend API (Vercel)
-        document.getElementById('uploadButton').addEventListener('click', async () => {
+        // Function to upload a code snippet
+        async function uploadCode() {
             const language = document.getElementById('language').value;
             const name = document.getElementById('codeName').value;
             const content = document.getElementById('codeContent').value;
@@ -99,7 +99,7 @@
             document.getElementById('codeContent').value = '';
             document.getElementById('removePassword').value = '';
             document.getElementById('uploaderName').value = '';
-        });
+        }
 
         // Fetch and render all uploaded code snippets
         async function renderCodeList() {
@@ -108,6 +108,11 @@
 
             const codeList = document.getElementById('codeList');
             codeList.innerHTML = ''; // Clear the list before rendering new content
+
+            if (data.codes.length === 0) {
+                codeList.innerHTML = '<p class="text-gray-500 text-center">No code snippets uploaded yet.</p>';
+                return;
+            }
 
             data.codes.forEach(code => {
                 const codeCard = document.createElement('div');
@@ -119,34 +124,15 @@
                     </div>
                     ${code.uploaderName ? `<div class="text-sm text-gray-600 mb-2">Uploaded by: ${code.uploaderName}</div>` : ''}
                     <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-48"><code>${code.content}</code></pre>
-                    <button onclick="showRemoveModal('${code.id}')" class="mt-2 w-full bg-red-500 text-white py-1 rounded">Remove Snippet</button>
                 `;
                 codeList.appendChild(codeCard);
             });
         }
 
-        // Show the modal for removing a code snippet
-        function showRemoveModal(id) {
-            const password = prompt('Enter removal password:');
-            if (password) {
-                fetch('/api/removeCode', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id, password })
-                })
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success) {
-                        alert('Code removed successfully!');
-                        renderCodeList(); // Refresh the list after removal
-                    } else {
-                        alert('Incorrect password or code not found.');
-                    }
-                });
-            }
-        }
+        // Event listener for the upload button
+        document.getElementById('uploadButton').addEventListener('click', uploadCode);
 
-        // Initial load of code snippets
+        // Load the code snippets when the page loads
         renderCodeList();
     </script>
 </body>
