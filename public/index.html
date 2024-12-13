@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeVault - Upload Your Code</title>
+    <title>CodeVault</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-4xl font-bold text-center mb-8 text-blue-600">CodeVault</h1>
-        
-        <!-- Form to upload code -->
-        <div class="bg-white shadow-lg rounded-lg p-6">
+
+        <!-- Upload Code Form -->
+        <div class="bg-white shadow-lg rounded-lg p-6 mb-8">
             <div class="mb-4">
-                <label for="language" class="block text-gray-700 font-bold mb-2">Select Language:</label>
+                <label for="language" class="block text-gray-700 font-bold mb-2">Language:</label>
                 <select id="language" class="w-full p-2 border rounded">
-                    <option value="javascript">JavaScript</option>
-                    <option value="python">Python</option>
-                    <option value="cpp">C++</option>
-                    <option value="java">Java</option>
-                    <option value="html">HTML</option>
-                    <option value="css">CSS</option>
-                    <option value="c">C</option>
-                    <option value="other">Other</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Python">Python</option>
+                    <option value="C++">C++</option>
+                    <option value="Java">Java</option>
+                    <option value="HTML">HTML</option>
+                    <option value="CSS">CSS</option>
+                    <option value="Other">Other</option>
                 </select>
             </div>
 
@@ -33,107 +32,90 @@
 
             <div class="mb-4">
                 <label for="codeName" class="block text-gray-700 font-bold mb-2">Code Title:</label>
-                <input type="text" id="codeName" class="w-full p-2 border rounded" placeholder="Give your code a descriptive name">
+                <input type="text" id="codeName" class="w-full p-2 border rounded" placeholder="Give your code a title">
             </div>
 
             <div class="mb-4">
-                <label for="codeContent" class="block text-gray-700 font-bold mb-2">Your Code:</label>
-                <textarea id="codeContent" rows="10" class="w-full p-2 border rounded" placeholder="Paste your code here..."></textarea>
+                <label for="codeContent" class="block text-gray-700 font-bold mb-2">Code:</label>
+                <textarea id="codeContent" rows="6" class="w-full p-2 border rounded" placeholder="Paste your code here..."></textarea>
             </div>
 
-            <div class="mb-4">
-                <label for="removePassword" class="block text-gray-700 font-bold mb-2">Optional Remove Password:</label>
-                <input type="password" id="removePassword" class="w-full p-2 border rounded" placeholder="Set a password to remove this code later">
-            </div>
-
-            <button id="uploadButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition duration-300">
+            <button id="uploadButton" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
                 Upload Code
             </button>
         </div>
-        
-        <!-- Display the uploaded code snippets -->
-        <div id="codeList" class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Dynamically populated code snippets will appear here -->
+
+        <!-- Code List -->
+        <div id="codeList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Code snippets will be displayed here -->
         </div>
     </div>
 
     <script>
-        // Function to upload a code snippet
-        async function uploadCode() {
-            const language = document.getElementById('language').value;
-            const name = document.getElementById('codeName').value;
-            const content = document.getElementById('codeContent').value;
-            const removePassword = document.getElementById('removePassword').value;
-            const uploaderName = document.getElementById('uploaderName').value;
+        const API_BASE = '/api'; // Base URL for API endpoints
 
-            if (!name || !content) {
-                alert('Please provide a name and code content');
-                return;
-            }
-
-            const code = {
-                language,
-                name,
-                content,
-                removePassword: removePassword || null,
-                uploaderName: uploaderName || null
-            };
-
-            // Send the uploaded code to the serverless function
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(code)
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                alert('Code uploaded successfully!');
-                renderCodeList(); // Refresh the list of codes
-            } else {
-                alert('Failed to upload code.');
-            }
-
-            // Clear the form
-            document.getElementById('codeName').value = '';
-            document.getElementById('codeContent').value = '';
-            document.getElementById('removePassword').value = '';
-            document.getElementById('uploaderName').value = '';
-        }
-
-        // Fetch and render all uploaded code snippets
-        async function renderCodeList() {
-            const response = await fetch('/api/getCode');
+        // Function to fetch and render uploaded code snippets
+        async function fetchAndRenderCode() {
+            const response = await fetch(`${API_BASE}/getCode`);
             const data = await response.json();
 
             const codeList = document.getElementById('codeList');
-            codeList.innerHTML = ''; // Clear the list before rendering new content
+            codeList.innerHTML = ''; // Clear existing content
 
             if (data.codes.length === 0) {
-                codeList.innerHTML = '<p class="text-gray-500 text-center">No code snippets uploaded yet.</p>';
+                codeList.innerHTML = '<p class="text-center text-gray-500">No code snippets uploaded yet.</p>';
                 return;
             }
 
-            data.codes.forEach(code => {
+            data.codes.forEach((code) => {
                 const codeCard = document.createElement('div');
-                codeCard.className = 'bg-white p-4 rounded shadow hover:shadow-lg transition';
+                codeCard.className = 'bg-white p-4 rounded shadow';
                 codeCard.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="mb-2">
                         <h3 class="text-lg font-bold">${code.name}</h3>
-                        <span class="text-sm text-gray-500">${code.language}</span>
+                        <p class="text-sm text-gray-500">${code.language}</p>
                     </div>
-                    ${code.uploaderName ? `<div class="text-sm text-gray-600 mb-2">Uploaded by: ${code.uploaderName}</div>` : ''}
-                    <pre class="bg-gray-100 p-2 rounded overflow-auto max-h-48"><code>${code.content}</code></pre>
+                    <pre class="bg-gray-100 p-2 rounded overflow-auto text-sm">${code.content}</pre>
+                    <p class="text-xs text-gray-400 mt-2">Uploaded by: ${code.uploaderName || 'Anonymous'}</p>
                 `;
                 codeList.appendChild(codeCard);
             });
         }
 
+        // Function to upload a new code snippet
+        async function uploadCode() {
+            const language = document.getElementById('language').value;
+            const name = document.getElementById('codeName').value;
+            const content = document.getElementById('codeContent').value;
+            const uploaderName = document.getElementById('uploaderName').value;
+
+            if (!name || !content) {
+                alert('Please provide a title and code content!');
+                return;
+            }
+
+            const payload = { language, name, content, uploaderName };
+
+            const response = await fetch(`${API_BASE}/upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                alert('Code uploaded successfully!');
+                fetchAndRenderCode(); // Refresh the code list
+            } else {
+                alert('Failed to upload code!');
+            }
+        }
+
         // Event listener for the upload button
         document.getElementById('uploadButton').addEventListener('click', uploadCode);
 
-        // Load the code snippets when the page loads
-        renderCodeList();
+        // Fetch and display code snippets on page load
+        fetchAndRenderCode();
     </script>
 </body>
 </html>
