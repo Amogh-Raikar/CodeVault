@@ -1,25 +1,31 @@
-const codes = []; // In-memory database (resets when the server restarts)
+const fs = require("fs").promises;
+const path = require("path");
 
-export default function handler(req, res) {
-    if (req.method === 'POST') {
-        const { language, name, content, uploaderName, password } = req.body;
+const dataFile = path.join(__dirname, "data.json");
 
-        if (!name || !content) {
-            return res.status(400).json({ success: false, message: 'Name and content are required!' });
-        }
+module.exports = async (req, res) => {
+  if (req.method === "POST") {
+    const { language, title, content, password } = req.body;
 
-        const codeSnippet = {
-            id: Date.now().toString(), // Generate unique ID using timestamp
-            language: language || 'Other',
-            name,
-            content,
-            uploaderName: uploaderName || 'Anonymous',
-            password: password || null, // Optional password for removing the snippet
-        };
-
-        codes.push(codeSnippet);
-        return res.status(201).json({ success: true, code: codeSnippet });
+    if (!title || !content) {
+      return res.status(400).json({ message: "Title and content are required." });
     }
 
-    res.status(405).json({ success: false, message: 'Method not allowed' });
-}
+    const codes = JSON.parse(await fs.readFile(dataFile, "utf-8") || "[]");
+    const newCode = {
+      id: Date.now().toString(),
+      language,
+      title,
+      content,
+      password,
+    };
+
+    codes.push(newCode);
+    await fs.writeFile(dataFile, JSON.stringify(codes, null, 2));
+
+    return res.status(201).json(newCode);
+  }
+
+  res.setHeader("Allow", ["POST"]);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
+};
