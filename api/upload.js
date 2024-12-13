@@ -1,7 +1,6 @@
-// File: api/upload.js
-const codes = []; // In-memory database (resets every time the server restarts)
+const codes = []; // In-memory database (resets when the server restarts)
 
-export default async function handler(req, res) {
+export default function handler(req, res) {
     if (req.method === 'POST') {
         const { language, name, content, uploaderName } = req.body;
 
@@ -14,7 +13,7 @@ export default async function handler(req, res) {
             language,
             name,
             content,
-            uploaderName,
+            uploaderName: uploaderName || 'Anonymous',
         };
 
         codes.push(codeSnippet);
