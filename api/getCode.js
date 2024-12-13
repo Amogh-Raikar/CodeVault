@@ -1,4 +1,4 @@
-const codes = require('./upload').codes; // Reuse the same `codes` array
+const codes = require('./upload').codes; // Reuse the codes array from upload.js
 
 export default function handler(req, res) {
     if (req.method === 'GET') {
