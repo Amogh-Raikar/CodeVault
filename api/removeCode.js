@@ -1,22 +1,25 @@
-const codes = require('./upload').codes; // Reuse the codes array from upload.js
+const fs = require("fs").promises;
+const path = require("path");
 
-export default function handler(req, res) {
-    if (req.method === 'POST') {
-        const { id, password } = req.body;
+const dataFile = path.join(__dirname, "data.json");
 
-        const index = codes.findIndex(
-            (snippet) => snippet.id === id && snippet.password === password
-        );
+module.exports = async (req, res) => {
+  if (req.method === "POST") {
+    const { id, password } = req.body;
 
-        if (index === -1) {
-            return res
-                .status(404)
-                .json({ success: false, message: 'Code snippet not found or incorrect password.' });
-        }
+    const codes = JSON.parse(await fs.readFile(dataFile, "utf-8") || "[]");
+    const index = codes.findIndex((code) => code.id === id && code.password === password);
 
-        codes.splice(index, 1); // Remove the snippet
-        return res.status(200).json({ success: true, message: 'Code snippet removed successfully.' });
+    if (index === -1) {
+      return res.status(400).json({ message: "Invalid ID or password." });
     }
 
-    res.status(405).json({ success: false, message: 'Method not allowed.' });
-}
+    codes.splice(index, 1);
+    await fs.writeFile(dataFile, JSON.stringify(codes, null, 2));
+
+    return res.status(200).json({ message: "Code removed successfully." });
+  }
+
+  res.setHeader("Allow", ["POST"]);
+  return res.status(405).end(`Method ${req.method} Not Allowed`);
+};
